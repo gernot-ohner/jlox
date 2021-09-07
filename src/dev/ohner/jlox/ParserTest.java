@@ -26,10 +26,8 @@ class ParserTest {
         final var parser = new Parser(tokens);
         final var statements = parser.parse();
 
-        if (hadError) return;
-
-        final var printer = new PrettyPrintVisitor();
-        statements.forEach(printer::print);
+//        if (hadError) return;
+        // TODO add an actual assertion
     }
 
     @Test
@@ -56,10 +54,8 @@ class ParserTest {
         final var parser = new Parser(tokens);
         final var statements = parser.parse();
 
-        if (hadError) return;
-
-        final var printer = new PrettyPrintVisitor();
-        statements.forEach(printer::print);
+//        if (hadError) return;
+        // TODO add an actual assertion
     }
 
     @Test
@@ -85,10 +81,8 @@ class ParserTest {
         final var parser = new Parser(tokens);
         final var statements = parser.parse();
 
-        if (hadError) return;
+//        if (hadError) return;
 
-        final var printer = new PrettyPrintVisitor();
-        statements.forEach(printer::print);
-
+        // TODO add an actual assertion
     }
 }

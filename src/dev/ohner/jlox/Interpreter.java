@@ -79,6 +79,18 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Object visitLogicalExpr(Expr.Logical expr) {
+
+        Object left = evaluate(expr.left);
+        if (expr.operator.type == OR) {
+            if (isTruthy(left)) return left;
+        } else {
+            if (!isTruthy(left)) return left;
+        }
+        return evaluate(expr.right);
+    }
+
+    @Override
     public Object visitBinaryExpr(Expr.Binary expr) {
         var left = evaluate(expr.left);
         var right = evaluate(expr.right);

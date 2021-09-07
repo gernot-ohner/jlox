@@ -19,6 +19,9 @@ public class GenerateAst {
                 "Binary   : Expr left, Token operator, Expr right",
                 "Grouping : Expr expression",
                 "Literal  : Object value",
+                // even though Logical is the same as Binary, create a new kind of expr,
+                // because that makes the visitors cleaner, because it gets a different precedence and behavior.
+                "Logical  : Expr left, Token operator, Expr right",
                 "Unary    : Token operator, Expr right",
                 "Variable : Token name"
         ));
