@@ -163,7 +163,7 @@ public class Parser {
             error(equals, "Invalid assignment target.");
         }
 
-        return equality();
+        return expr;
     }
 
     private Expr or() {
