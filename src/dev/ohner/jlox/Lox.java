@@ -48,9 +48,9 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
-        final var expr = new Parser(tokens).parse();
+        final var statements = new Parser(tokens).parse();
         if (hadError) return;
-        interpreter.interpret(expr);
+        interpreter.interpret(statements);
     }
 
     static void error(int line, String message) {

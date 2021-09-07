@@ -24,12 +24,12 @@ class ParserTest {
 
 
         final var parser = new Parser(tokens);
-        final var expression = parser.parse();
+        final var statements = parser.parse();
 
         if (hadError) return;
 
-        final var exprString = new PrettyPrintVisitor().print(expression);
-        System.out.println("expression = " + exprString);
+        final var printer = new PrettyPrintVisitor();
+        statements.forEach(printer::print);
     }
 
     @Test
@@ -54,12 +54,12 @@ class ParserTest {
         // when
 
         final var parser = new Parser(tokens);
-        final var expression = parser.parse();
+        final var statements = parser.parse();
 
         if (hadError) return;
 
-        final var exprString = new PrettyPrintVisitor().print(expression);
-        System.out.println("expression = " + exprString);
+        final var printer = new PrettyPrintVisitor();
+        statements.forEach(printer::print);
     }
 
     @Test
@@ -83,11 +83,12 @@ class ParserTest {
 
 
         final var parser = new Parser(tokens);
-        final var expression = parser.parse();
+        final var statements = parser.parse();
 
         if (hadError) return;
 
-        final var exprString = new PrettyPrintVisitor().print(expression);
-        System.out.println("expression = " + exprString);
+        final var printer = new PrettyPrintVisitor();
+        statements.forEach(printer::print);
+
     }
 }
