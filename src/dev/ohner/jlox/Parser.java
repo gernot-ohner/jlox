@@ -1,6 +1,7 @@
 package dev.ohner.jlox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static dev.ohner.jlox.TokenType.*;
@@ -9,7 +10,8 @@ import static dev.ohner.jlox.TokenType.*;
 
 public class Parser {
 
-    private static class ParseError extends RuntimeException {}
+    private static class ParseError extends RuntimeException {
+    }
 
     private final List<Token> tokens;
     private int current = 0;
@@ -49,11 +51,55 @@ public class Parser {
     }
 
     private Stmt statement() {
+        if (match(FOR)) return forStatement();
+        if (match(WHILE)) return whileStatement();
         if (match(IF)) return ifStatement();
         if (match(PRINT)) return printStatement();
         if (match(LEFT_BRACE)) return new Stmt.Block(block());
 
         return expressionStatement();
+    }
+
+    private Stmt forStatement() {
+        consume(LEFT_PAREN, "Expect '(' after for.");
+
+        Stmt initializer = null;
+        if (match(SEMICOLON)) { /* initializer just stays null */ }
+        else if (match(VAR)) initializer = varDeclaration();
+        else initializer = new Stmt.Expression(assignment());
+
+        Expr condition = null;
+        if (!check(SEMICOLON)) {
+            condition = expression();
+        }
+        consume(SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!check(RIGHT_PAREN)) increment = expression();
+        consume(RIGHT_PAREN, "Expect ')' after for loop initialization.");
+
+        Stmt body = statement();
+
+        if (increment != null) {
+            body = new Stmt.Block(Arrays.asList(body, new Stmt.Expression(increment)));
+        }
+
+        body = new Stmt.While(condition == null ? new Expr.Literal(true) : condition, body);
+
+        if (initializer != null) {
+            body = new Stmt.Block(Arrays.asList(initializer, body));
+        }
+
+        return body;
+    }
+
+
+    private Stmt whileStatement() {
+        consume(LEFT_PAREN, "Expect '(' after while.");
+        Expr condition = expression();
+        consume(RIGHT_PAREN, "Expect ')' after condition.");
+        Stmt body = statement();
+        return new Stmt.While(condition, body);
     }
 
     private Stmt ifStatement() {
@@ -108,7 +154,7 @@ public class Parser {
             // because assignment is right-associative and the other binary ops are left associative
             Expr value = assignment();
 
-            if (expr instanceof  Expr.Variable vExpr) {
+            if (expr instanceof Expr.Variable vExpr) {
                 Token name = vExpr.name;
                 return new Expr.Assign(name, value);
             }
