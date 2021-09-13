@@ -1,13 +1,32 @@
 package dev.ohner.jlox;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static dev.ohner.jlox.TokenType.*;
 
 public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
-    private Environment environment = new Environment();
+    final Environment globals = new Environment();
+    private Environment environment = globals;
+    private Map<Expr, Integer> locals = new HashMap<>();
+
+    public Interpreter() {
+        globals.define("clock", new LoxCallable() {
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double) System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public int arity() {
+                return 0;
+            }
+        });
+    }
 
     void interpret(List<Stmt> statements) {
         try {
@@ -17,7 +36,7 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         }
     }
 
-    private void execute(Stmt statement) {
+    public void execute(Stmt statement) {
         statement.accept(this);
     }
 
@@ -63,7 +82,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
     @Override
     public Object visitVariableExpr(Expr.Variable expr) {
-        return environment.get(expr.name);
+        return lookUpVariable(expr.name, expr);
+//        return environment.get(expr.name);
+    }
+
+    private Object lookUpVariable(Token name, Expr.Variable expr) {
+        Integer distance = locals.get(expr);
+        if (distance != null)  {
+            return environment.getAt(distance, name.lexeme);
+        } else {
+            return globals.get(name);
+        }
     }
 
     private void checkNumberOperand(Token operator, Object operand) {
@@ -74,6 +103,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Object visitAssignExpr(Expr.Assign expr) {
         Object value = evaluate(expr.value);
+        Integer distance = locals.get(expr);
+
+        if (distance != null) {
+            environment.assignAt(distance, expr.name, value);
+        } else {
+            globals.assign(expr.name, value);
+        }
+
+
         environment.assign(expr.name, value);
         return value;
     }
@@ -96,6 +134,15 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
             if (!isTruthy(left)) return left;
         }
         return evaluate(expr.right);
+    }
+
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        Object value = null;
+        if (stmt.value != null) {
+            value = evaluate(stmt.value);
+        }
+        throw new Return(value);
     }
 
     @Override
@@ -164,7 +211,26 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
-    private void executeBlock(List<Stmt> statements, Environment environment) {
+    @Override
+    public Object visitCallExpr(Expr.Call expr) {
+        Object callee = evaluate(expr.callee);
+        final var arguments = expr.arguments.stream()
+                .map(this::evaluate)
+                .collect(Collectors.toList());
+
+        if (!(callee instanceof LoxCallable function)) {
+            throw new RuntimeError(expr.paren, "Can only call functions and classes.");
+        }
+
+        if (arguments.size() != function.arity()) {
+            throw new RuntimeError(expr.paren,
+                    "Expected " + function.arity() + "arguments but got " + arguments.size() + ".");
+        }
+
+        return function.call(this, arguments);
+    }
+
+    public void executeBlock(List<Stmt> statements, Environment environment) {
         // the more elegant version would have been
         // to pass the current environment as an argument to every visit method
         // then you don't need to worry about restoring it afterwards
@@ -184,10 +250,17 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitFunctionStmt(Stmt.Function stmt) {
+        var function = new LoxFunction(stmt, environment);
+        environment.define(stmt.name.lexeme, function);
+        return null;
+    }
+
+    @Override
     public Void visitIfStmt(Stmt.If stmt) {
         if (isTruthy(evaluate(stmt.condition))) {
             execute(stmt.thenBranch);
-        } else {
+        } else if (stmt.elseBranch != null){
             execute(stmt.elseBranch);
         }
         return null;
@@ -209,5 +282,9 @@ public class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
 
         environment.define(stmt.name.lexeme, value);
         return null;
+    }
+
+    public void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
     }
 }

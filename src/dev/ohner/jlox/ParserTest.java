@@ -11,6 +11,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ParserTest {
 
+    @Test
+    void parseASingleNumber() {
+        final List<Token> tokens = new ArrayList<>();
+        tokens.add(new Token(TokenType.NUMBER, "3", 3.0, 0));
+        tokens.add(new Token(TokenType.SEMICOLON, ";", null, 0));
+        tokens.add(new Token(TokenType.EOF, "", null, 0));
+
+        final var parser = new Parser(tokens);
+        final var statements = parser.parse();
+
+        final var expectedExpression = new Stmt.Expression(new Expr.Literal(1));
+
+        assertEquals(expectedExpression, statements.get(0));
+    }
+
     @Ignore("Parsing assignments is not supported yet")
     @Test
     void parseAnAssignment() {
@@ -21,6 +36,8 @@ class ParserTest {
         tokens.add(new Token(TokenType.IDENTIFIER, "language", "language", 0));
         tokens.add(new Token(TokenType.EQUAL, "=", null, 0));
         tokens.add(new Token(TokenType.STRING, "lox", "lox", 0));
+        tokens.add(new Token(TokenType.SEMICOLON, ";", null, 0));
+        tokens.add(new Token(TokenType.EOF, "", null, 0));
 
 
         final var parser = new Parser(tokens);

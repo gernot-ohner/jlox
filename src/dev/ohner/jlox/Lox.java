@@ -42,6 +42,7 @@ public class Lox {
             if (line == null) break;
             run(line);
             hadError = false;
+            hadRuntimeError = false;
         }
     }
 
@@ -50,6 +51,10 @@ public class Lox {
         List<Token> tokens = scanner.scanTokens();
         final var statements = new Parser(tokens).parse();
         if (hadError) return;
+
+        final var resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
+
         interpreter.interpret(statements);
     }
 
